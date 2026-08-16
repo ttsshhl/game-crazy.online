@@ -1,0 +1,47 @@
+[
+  {
+    "id": "jackie",
+    "title": "Джеки: Свалка до Луны",
+    "developer": "ttsshhl",
+    "genre": "Платформер",
+    "tag": "Хит",
+    "cover": "./assets/covers/jackie.jpg",
+    "url": "./games/jackie/index.html",
+    "description": "Только вверх. Одна ошибка — и ты снова внизу.",
+    "featured": true,
+    "products": []
+  },
+  {
+    "id": "district",
+    "title": "Русский Район 3D",
+    "developer": "ttsshhl",
+    "genre": "Открытый мир",
+    "tag": "Новое",
+    "cover": "./assets/covers/district.jpg",
+    "url": "./games/district/index.html",
+    "description": "Открытый двор, миссии, радио и пешеходы.",
+    "products": []
+  },
+  {
+    "id": "serpantin",
+    "title": "Серпантин 3D",
+    "developer": "ttsshhl",
+    "genre": "Гонки",
+    "tag": "",
+    "cover": "./assets/covers/serpantin.jpg",
+    "url": "./games/serpantin/index.html",
+    "description": "Спуск с горы на скорости, которую сложно контролировать.",
+    "products": []
+  },
+  {
+    "id": "keyboard",
+    "title": "Сбеги с клавиатуры!",
+    "developer": "ttsshhl",
+    "genre": "Раннер",
+    "tag": "",
+    "cover": "./assets/covers/keyboard.jpg",
+    "url": "./games/keyboard/index.html",
+    "description": "Бег по клавишам, пока их не нажали.",
+    "products": []
+  }
+]

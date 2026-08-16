@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Загрузка игр — PLAYDROP</title>
+<link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top__in">
+    <a class="logo" href="./index.html">PLAY<b>DROP</b></a>
+    <div id="account"></div>
+  </div>
+</header>
+
+<main class="shell">
+
+  <!-- вход -->
+  <section class="gate" id="gate">
+    <h1>Панель загрузки</h1>
+    <p>Страница доступна только администратору площадки.</p>
+    <div class="field"><label for="email">Почта</label><input id="email" type="email" autocomplete="username"></div>
+    <div class="field"><label for="pass">Пароль</label><input id="pass" type="password" autocomplete="current-password"></div>
+    <button class="btn" id="doLogin">Войти</button>
+    <p class="err is-hidden" id="loginErr"></p>
+  </section>
+
+  <!-- форма -->
+  <section class="is-hidden" id="panel">
+    <div class="row"><h2>Новая игра</h2><span>HTML-файл целиком</span></div>
+
+    <div class="form">
+      <div class="form__col">
+        <div class="field">
+          <label for="fHtml">Файл игры (.html)</label>
+          <input id="fHtml" type="file" accept=".html,.htm">
+          <small id="htmlInfo"></small>
+        </div>
+
+        <div class="field">
+          <label for="fCover">Иконка (jpg / png / webp)</label>
+          <input id="fCover" type="file" accept="image/*">
+          <small>Пропорции 4:3, примерно 640×480</small>
+        </div>
+
+        <div class="field">
+          <label for="fTitle">Название</label>
+          <input id="fTitle" type="text" placeholder="Джеки: Свалка до Луны">
+        </div>
+
+        <div class="field">
+          <label for="fDesc">Описание</label>
+          <textarea id="fDesc" rows="3" placeholder="Только вверх. Одна ошибка — и ты снова внизу."></textarea>
+        </div>
+
+        <div class="field field--split">
+          <div><label for="fGenre">Жанр</label><input id="fGenre" type="text" placeholder="Платформер"></div>
+          <div><label for="fTag">Плашка</label><input id="fTag" type="text" placeholder="Хит"></div>
+        </div>
+
+        <div class="field">
+          <label for="fId">Адрес игры</label>
+          <input id="fId" type="text" placeholder="jackie">
+          <small>Латиницей. Заполняется само из названия.</small>
+        </div>
+
+        <label class="check"><input id="fFeatured" type="checkbox"> Показать крупно на главной</label>
+      </div>
+
+      <div class="form__col">
+        <div class="row row--tight">
+          <h3>Для англоязычных</h3>
+          <button class="btn btn--ghost" id="doTranslate">Перевести</button>
+        </div>
+        <p class="hint">Посетителям с английским браузером покажется этот вариант. Перевод можно поправить руками.</p>
+
+        <div class="field"><label for="fTitleEn">Title</label><input id="fTitleEn" type="text"></div>
+        <div class="field"><label for="fDescEn">Description</label><textarea id="fDescEn" rows="3"></textarea></div>
+        <div class="field"><label for="fGenreEn">Genre</label><input id="fGenreEn" type="text"></div>
+
+        <button class="btn btn--wide" id="doUpload">Загрузить игру</button>
+        <p class="err is-hidden" id="uploadErr"></p>
+        <p class="ok is-hidden" id="uploadOk"></p>
+      </div>
+    </div>
+
+    <div class="row"><h2>Загруженные игры</h2><span id="listCount"></span></div>
+    <div class="progress-list" id="list"></div>
+  </section>
+</main>
+
+<script type="module">
+import { db } from './assets/db.js';
+import { CONFIG } from './assets/config.js';
+
+const $ = id => document.getElementById(id);
+const SDK_URL = location.origin + location.pathname.replace(/admin\.html$/, '') + 'sdk/playdrop-sdk.js';
+
+let session = null;
+
+// ─── доступ ──────────────────────────────────────────────────
+async function checkAccess() {
+  const { data } = await db.auth.getSession();
+  session = data.session;
+  if (!session || session.user.is_anonymous) return show(false);
+  const { data: admin } = await db.rpc('is_admin');
+  show(!!admin);
+  if (!admin) {
+    $('loginErr').textContent = 'Этот аккаунт не в списке администраторов.';
+    $('loginErr').classList.remove('is-hidden');
+  }
+}
+
+function show(ok) {
+  $('gate').classList.toggle('is-hidden', ok);
+  $('panel').classList.toggle('is-hidden', !ok);
+  $('account').innerHTML = ok ? `<button class="btn btn--ghost" id="out">Выйти</button>` : '';
+  if (ok) {
+    $('out').onclick = async () => { await db.auth.signOut(); location.reload(); };
+    loadList();
+  }
+}
+
+$('doLogin').onclick = async () => {
+  const err = $('loginErr');
+  err.classList.add('is-hidden');
+  // анонимную сессию сбрасываем, иначе вход не пройдёт
+  const { data } = await db.auth.getSession();
+  if (data.session?.user.is_anonymous) await db.auth.signOut();
+
+  const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pass').value });
+  if (error) { err.textContent = error.message; err.classList.remove('is-hidden'); return; }
+  checkAccess();
+};
+
+// ─── помощники ───────────────────────────────────────────────
+const RU = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',
+  о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya' };
+
+function slug(s) {
+  return s.toLowerCase().split('').map(c => RU[c] ?? c).join('')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+}
+
+$('fTitle').addEventListener('input', e => {
+  if (!$('fId').dataset.touched) $('fId').value = slug(e.target.value);
+});
+$('fId').addEventListener('input', e => { e.target.dataset.touched = '1'; });
+
+$('fHtml').addEventListener('change', e => {
+  const f = e.target.files[0];
+  $('htmlInfo').textContent = f ? `${f.name} · ${(f.size / 1048576).toFixed(1)} МБ` : '';
+});
+
+// ─── перевод ─────────────────────────────────────────────────
+$('doTranslate').onclick = async () => {
+  const btn = $('doTranslate');
+  const texts = [$('fTitle').value, $('fDesc').value, $('fGenre').value];
+  if (!texts[0]) return;
+
+  btn.disabled = true; btn.textContent = 'Перевожу…';
+  try {
+    const { data, error } = await db.functions.invoke('translate', { body: { texts } });
+    if (error) throw error;
+    $('fTitleEn').value = data.translations[0] || '';
+    $('fDescEn').value = data.translations[1] || '';
+    $('fGenreEn').value = data.translations[2] || '';
+  } catch (err) {
+    $('uploadErr').textContent = 'Перевод недоступен: ' + (err.message || err) + '. Заполните поля вручную.';
+    $('uploadErr').classList.remove('is-hidden');
+  }
+  btn.disabled = false; btn.textContent = 'Перевести';
+};
+
+// ─── загрузка ────────────────────────────────────────────────
+$('doUpload').onclick = async () => {
+  const err = $('uploadErr'), ok = $('uploadOk');
+  err.classList.add('is-hidden'); ok.classList.add('is-hidden');
+
+  const id = $('fId').value.trim();
+  const title = $('fTitle').value.trim();
+  const htmlFile = $('fHtml').files[0];
+  const coverFile = $('fCover').files[0];
+
+  if (!id || !title || !htmlFile) return fail('Нужны файл игры, название и адрес.');
+
+  const btn = $('doUpload');
+  btn.disabled = true; btn.textContent = 'Загружаю…';
+
+  try {
+    // 1. в HTML игры подставляем SDK площадки
+    let html = await htmlFile.text();
+    const yandex = /<script[^>]*src=["'][^"']*yandex[^"']*(?:sdk|games)[^"']*["'][^>]*>\s*<\/script>/gi;
+    const tag = `<script src="${SDK_URL}"><\/script>`;
+    if (yandex.test(html)) html = html.replace(yandex, tag);
+    else if (!html.includes('playdrop-sdk.js')) html = html.replace(/<\/head>/i, `  ${tag}\n</head>`);
+
+    // 2. файлы в хранилище
+    const up = await db.storage.from('games').upload(`${id}/index.html`, new Blob([html], { type: 'text/html' }), {
+      upsert: true, contentType: 'text/html; charset=utf-8'
+    });
+    if (up.error) throw up.error;
+    const gameUrl = db.storage.from('games').getPublicUrl(`${id}/index.html`).data.publicUrl;
+
+    let coverUrl = null;
+    if (coverFile) {
+      const ext = (coverFile.name.split('.').pop() || 'jpg').toLowerCase();
+      const c = await db.storage.from('covers').upload(`${id}.${ext}`, coverFile, { upsert: true, contentType: coverFile.type });
+      if (c.error) throw c.error;
+      coverUrl = db.storage.from('covers').getPublicUrl(`${id}.${ext}`).data.publicUrl + '?v=' + Date.now();
+    }
+
+    // 3. строка в каталоге
+    const row = {
+      id, title,
+      title_en: $('fTitleEn').value.trim() || null,
+      description: $('fDesc').value.trim() || null,
+      description_en: $('fDescEn').value.trim() || null,
+      genre: $('fGenre').value.trim() || null,
+      genre_en: $('fGenreEn').value.trim() || null,
+      tag: $('fTag').value.trim() || null,
+      game_url: gameUrl,
+      featured: $('fFeatured').checked,
+      published: true,
+      owner_id: session.user.id,
+      updated_at: new Date().toISOString()
+    };
+    if (coverUrl) row.cover_url = coverUrl;
+
+    const { error: dbErr } = await db.from('games').upsert(row, { onConflict: 'id' });
+    if (dbErr) throw dbErr;
+
+    ok.textContent = `Готово. Игра открывается по адресу game.html?id=${id}`;
+    ok.classList.remove('is-hidden');
+    ['fTitle','fDesc','fGenre','fTag','fId','fTitleEn','fDescEn','fGenreEn'].forEach(k => $(k).value = '');
+    $('fHtml').value = ''; $('fCover').value = ''; $('htmlInfo').textContent = '';
+    delete $('fId').dataset.touched;
+    loadList();
+  } catch (e) {
+    fail(e.message || String(e));
+  }
+
+  btn.disabled = false; btn.textContent = 'Загрузить игру';
+
+  function fail(msg) {
+    err.textContent = msg;
+    err.classList.remove('is-hidden');
+    btn.disabled = false; btn.textContent = 'Загрузить игру';
+  }
+};
+
+// ─── список ──────────────────────────────────────────────────
+async function loadList() {
+  const { data } = await db.from('games').select('*').order('created_at', { ascending: false });
+  const rows = data || [];
+  $('listCount').textContent = `${rows.length} шт.`;
+  $('list').innerHTML = rows.map(g => `
+    <div class="prow">
+      <img class="prow__img" src="${g.cover_url || ''}" alt="" onerror="this.style.visibility='hidden'">
+      <div class="prow__b">
+        <h3>${g.title}${g.featured ? ' · на главной' : ''}</h3>
+        <p>${g.title_en ? 'EN: ' + g.title_en : 'без английской версии'} · ${g.published ? 'опубликована' : 'скрыта'}</p>
+      </div>
+      <div class="prow__side">
+        <a class="btn btn--ghost" href="./game.html?id=${g.id}">Открыть</a>
+        <button class="link" data-hide="${g.id}" data-state="${g.published}">${g.published ? 'скрыть' : 'показать'}</button>
+        <button class="link" data-del="${g.id}">удалить</button>
+      </div>
+    </div>`).join('');
+
+  $('list').querySelectorAll('[data-hide]').forEach(b => b.onclick = async () => {
+    await db.from('games').update({ published: b.dataset.state !== 'true' }).eq('id', b.dataset.hide);
+    loadList();
+  });
+  $('list').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    if (!confirm('Удалить игру из каталога? Файлы тоже будут стёрты.')) return;
+    const id = b.dataset.del;
+    await db.storage.from('games').remove([`${id}/index.html`]);
+    await db.from('games').delete().eq('id', id);
+    loadList();
+  });
+}
+
+checkAccess();
+</script>
+</body>
+</html>
