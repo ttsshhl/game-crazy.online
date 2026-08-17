@@ -30,10 +30,23 @@ export function localLibrary(games) {
 }
 
 // ─── серверный слой ──────────────────────────────────────────
+export let lastError = null;
+
 export async function loadLibrary(session, games) {
-  if (!session) return localLibrary(games);   // Supabase недоступен — работаем локально
+  if (!session) {
+    lastError = 'нет сессии — прогресс читается только из этого браузера';
+    console.warn('[playdrop]', lastError);
+    return localLibrary(games);
+  }
+
   const { data, error } = await db.rpc('my_library');
-  if (error || !data) return localLibrary(games);
+  if (error) {
+    lastError = error.message;
+    console.warn('[playdrop] my_library вернула ошибку:', error.message);
+    return localLibrary(games);
+  }
+  if (!data) return localLibrary(games);
+  console.info('[playdrop] прогресс с сервера:', data.length, 'записей; игрок', session.user.id);
 
   // локальные данные догоняют серверные, если игрок играл до входа
   const byId = new Map(data.map(r => [r.game_id, r]));

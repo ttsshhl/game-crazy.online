@@ -279,10 +279,52 @@ function renderAccount() {
   }
 }
 
-document.getElementById('fsBtn').onclick = () => {
-  const wrap = document.getElementById('stage');
-  document.fullscreenElement ? document.exitFullscreen() : wrap.requestFullscreen();
-};
+// ─── полноэкранный режим ─────────────────────────────────────
+const stage = document.getElementById('stage');
+const fsBtn = document.getElementById('fsBtn');
+
+function fsElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+function covered() { return stage.classList.contains('stage--cover'); }
+
+function updateFsBtn() {
+  fsBtn.textContent = (fsElement() || covered()) ? 'Свернуть' : 'На весь экран';
+}
+
+/** Запасной режим: растягиваем плеер по окну средствами CSS. */
+function toggleCover(on) {
+  stage.classList.toggle('stage--cover', on);
+  document.body.classList.toggle('no-scroll', on);
+  updateFsBtn();
+  frame.focus();
+}
+
+async function toggleFullscreen() {
+  if (covered()) return toggleCover(false);
+
+  if (fsElement()) {
+    try { await (document.exitFullscreen?.() || document.webkitExitFullscreen?.()); } catch (_) {}
+    return;
+  }
+
+  const request = stage.requestFullscreen || stage.webkitRequestFullscreen || stage.msRequestFullscreen;
+  if (!request) return toggleCover(true);
+
+  try {
+    await request.call(stage, { navigationUI: 'hide' });
+    frame.focus();
+  } catch (e) {
+    // браузер отказал (политика, расширение, режим окна) — разворачиваем сами
+    console.warn('[playdrop] Полноэкранный режим недоступен:', e.message);
+    toggleCover(true);
+  }
+}
+
+fsBtn.addEventListener('click', toggleFullscreen);
+document.addEventListener('fullscreenchange', updateFsBtn);
+document.addEventListener('webkitfullscreenchange', updateFsBtn);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && covered()) toggleCover(false); });
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { pauseGame(); flush(); } else { resumeGame(); }

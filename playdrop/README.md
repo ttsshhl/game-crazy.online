@@ -21,13 +21,18 @@ server/schema.sql     таблицы, RLS и RPC для Supabase
 server/translate/     Edge Function перевода на английский
 server/yandex-userinfo/  Edge Function для входа через Яндекс (опционально)
 tools/add-game.js     добавление многофайлового билда из командной строки
-SETUP.md              подробная инструкция по запуску
+START.md              запуск с нуля, шаг за шагом
+DOMAIN.md             публикация на своём домене
+SETUP.md              краткая инструкция и тонкости переноса игр
 games/<id>/           билды игр
 ```
 
 ## Запуск
 
-Пошагово — в **SETUP.md**. Коротко:
+**START.md** — подробная инструкция с нуля, по шагам, с проверками после каждого.
+**SETUP.md** — то же короче, для тех, кто уже работал с Supabase.
+
+Коротко:
 
 1. `npx serve .` — площадка уже работает на localStorage, без бэкенда.
 2. Supabase: выполнить `server/schema.sql`, включить анонимный вход, вписать ключи в `assets/config.js`.
