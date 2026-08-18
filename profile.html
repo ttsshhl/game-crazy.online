@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Профиль — PLAYDROP</title>
+<title>Профиль — CRAZY (vibecod) GAME</title>
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -15,7 +15,7 @@
 
 <header class="top">
   <div class="top__in">
-    <a class="logo" href="./index.html">PLAY<b>DROP</b></a>
+    <a class="logo" href="./index.html">CRAZY<em>(vibecod)</em>GAME</a>
     <div id="account"></div>
   </div>
 </header>
@@ -36,7 +36,7 @@
 <script type="module">
 import { db, ensureSession, isNamed, canSignIn, signIn, signOut } from './assets/db.js';
 import { loadLibrary, loadStreak, xpFrom, levelFrom, fmtDuration, fmtAgo, plural } from './assets/library.js';
-import { loadGames, loc } from './assets/catalog.js';
+import { loadGames, loc, avatarHtml } from './assets/catalog.js';
 import { lastError } from './assets/library.js';
 
 const games = await loadGames();

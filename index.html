@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PLAYDROP — играй в браузере</title>
-<meta name="description" content="Браузерные игры без установки. Сохранения, рекорды, вход через Яндекс.">
+<title>CRAZY (vibecod) GAME — играй в браузере</title>
+<meta name="description" content="Только больная фантазия соло-разработчиков. Браузерные игры без установки.">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -16,13 +16,15 @@
 
 <header class="top">
   <div class="top__in">
-    <a class="logo" href="./index.html">PLAY<b>DROP</b></a>
+    <a class="logo" href="./index.html">CRAZY<em>(vibecod)</em>GAME</a>
     <input class="search" id="search" type="search" placeholder="Найти игру" aria-label="Поиск игры">
     <div id="account"></div>
   </div>
 </header>
 
 <main class="shell">
+  <p class="tagline">Только больная фантазия соло-разработчиков. Такого больше нет нигде.</p>
+
   <section class="continue is-hidden" id="continue">
     <div class="row">
       <h2 id="continueTitle">Продолжить</h2>
@@ -44,7 +46,7 @@
 <script type="module">
 import { ensureSession, isNamed, canSignIn, signIn, signOut } from './assets/db.js';
 import { loadLibrary, loadStreak, fmtDuration, fmtAgo, plural } from './assets/library.js';
-import { loadGames, loc, t } from './assets/catalog.js';
+import { loadGames, loc, t, loadMyProfile, avatarHtml } from './assets/catalog.js';
 
 const games = await loadGames();
 const byId = Object.fromEntries(games.map(g => [g.id, g]));
@@ -57,14 +59,16 @@ document.getElementById('allTitle').textContent = t.all;
 document.getElementById('search').placeholder = t.search;
 
 const box = document.getElementById('account');
+const myProfile = await loadMyProfile(session);
+
 if (named) {
   box.innerHTML = `<a class="acc" href="./profile.html">
-      <img class="ava" src="${session.user.user_metadata?.avatar_url || ''}" alt="">
-      <span>${session.user.user_metadata?.name || 'Профиль'}</span></a>
-    <button class="btn btn--ghost" id="out">Выйти</button>`;
+      ${avatarHtml(myProfile, 'Профиль')}
+      <span>${myProfile.name || 'Профиль'}</span></a>
+    <button class="btn btn--ghost" id="out">${t.signOut}</button>`;
   document.getElementById('out').onclick = async () => { await signOut(); location.reload(); };
 } else {
-  box.innerHTML = `<a class="acc" href="./profile.html">${t.profile}</a>` +
+  box.innerHTML = `<a class="acc" href="./profile.html">${avatarHtml(myProfile, 'Гость')}<span>${t.profile}</span></a>` +
     (canSignIn ? `<button class="btn" id="in">${t.signIn}</button>` : '');
   if (canSignIn) document.getElementById('in').onclick = () => signIn(location.href);
 }

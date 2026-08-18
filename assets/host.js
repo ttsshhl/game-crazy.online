@@ -5,7 +5,7 @@
 import { CONFIG } from './config.js';
 import { db, ensureSession, isNamed, canSignIn, signIn, signOut } from './db.js';
 import { ads } from './ads.js';
-import { loadGames, loc } from './catalog.js';
+import { loadGames, loc, loadMyProfile, avatarHtml } from './catalog.js';
 
 const frame = document.getElementById('gameFrame');
 const params = new URLSearchParams(location.search);
@@ -77,9 +77,16 @@ async function mountGame(url) {
   }
 }
 
-session = await ensureSession();
+try {
+  session = await ensureSession();
+} catch (e) {
+  console.warn('[playdrop] Сессия недоступна:', e.message);
+  session = null;
+}
+console.info('[playdrop] Игрок:', session ? session.user.id : 'без сессии');
+
 renderAccount();
-startTracking();
+startTracking();   // локальный учёт идёт даже без сессии
 
 // ─── роутер сообщений от игры ────────────────────────────────
 const handlers = {
@@ -263,20 +270,71 @@ function resumeGame() { ticking = true; emitToGame('resume'); frame.focus(); }
 function lsKey(k) { return `pd:${game.id}:${k}`; }
 
 // ─── аккаунт ─────────────────────────────────────────────────
-function renderAccount() {
+async function renderAccount() {
   const boxEl = document.getElementById('account');
+  const prof = await loadMyProfile(session);
   if (isNamed(session)) {
-    const u = session.user;
     boxEl.innerHTML = `<a class="acc" href="./profile.html">
-        <img class="ava" src="${u.user_metadata?.avatar_url || ''}" alt="">
-        <span>${u.user_metadata?.name || 'Профиль'}</span></a>
+        ${avatarHtml(prof, 'Профиль')}
+        <span>${prof.name || 'Профиль'}</span></a>
       <button class="btn btn--ghost" id="logout">Выйти</button>`;
     document.getElementById('logout').onclick = async () => { await signOut(); location.reload(); };
   } else {
-    boxEl.innerHTML = `<a class="acc" href="./profile.html">Профиль</a>` +
+    boxEl.innerHTML = `<a class="acc" href="./profile.html">${avatarHtml(prof, 'Гость')}<span>Профиль</span></a>` +
       (canSignIn ? `<button class="btn" id="login">Войти</button>` : '');
     if (canSignIn) document.getElementById('login').onclick = () => signIn(location.href);
   }
+}
+
+// ─── учёт игрового времени и серии дней ──────────────────────
+function startTracking() {
+  localSeconds = Number(localStorage.getItem(lsKey('seconds')) || 0);
+  const sessions = Number(localStorage.getItem(lsKey('sessions')) || 0) + 1;
+  localStorage.setItem(lsKey('sessions'), sessions);
+  localStorage.setItem(lsKey('lastPlayed'), Date.now());
+  bumpLocalStreak();
+  track(0, true);
+
+  setInterval(() => {
+    if (!ticking || document.hidden) return;
+    pending += 5;
+    localSeconds += 5;
+    localStorage.setItem(lsKey('seconds'), localSeconds);
+    localStorage.setItem(lsKey('lastPlayed'), Date.now());
+  }, 5000);
+
+  setInterval(flush, 30000);
+  addEventListener('pagehide', flush);
+  addEventListener('beforeunload', flush);
+}
+
+function flush() {
+  if (!pending) return;
+  const seconds = pending;
+  pending = 0;
+  track(seconds, false);
+}
+
+/** Отправка времени с явным разбором ошибки — молчаливый сбой хуже видимого. */
+function track(seconds, isNew) {
+  if (!session) return;
+  db.rpc('track_play', { p_game: game.id, p_seconds: seconds, p_new_session: isNew })
+    .then(({ error }) => {
+      if (error) console.warn('[playdrop] track_play не сработала:', error.message);
+      else if (isNew) console.info('[playdrop] учёт времени запущен для', game.id);
+    })
+    .catch((e) => console.warn('[playdrop] track_play:', e.message));
+}
+
+/** Гостевая серия дней — чтобы полка «Продолжить» жила и до входа. */
+function bumpLocalStreak() {
+  const today = new Date().toISOString().slice(0, 10);
+  const last = localStorage.getItem('pd:streakDate');
+  if (last === today) return;
+  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  const cur = Number(localStorage.getItem('pd:streak') || 0);
+  localStorage.setItem('pd:streak', last === yesterday ? cur + 1 : 1);
+  localStorage.setItem('pd:streakDate', today);
 }
 
 // ─── полноэкранный режим ─────────────────────────────────────

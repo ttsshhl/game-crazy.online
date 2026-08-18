@@ -46,6 +46,26 @@ export async function loadGames(force) {
   }
 }
 
+/** Имя и фото игрока из таблицы profiles — то же, что видно в таблицах рекордов. */
+export async function loadMyProfile(session) {
+  const meta = session?.user?.user_metadata || {};
+  const fallback = { name: meta.name || meta.full_name || null, photo: meta.avatar_url || null };
+  if (!session) return fallback;
+  try {
+    const { data } = await db.rpc('my_profile');
+    const row = data && data[0];
+    return { name: row?.name || fallback.name, photo: row?.photo || fallback.photo };
+  } catch (_) { return fallback; }
+}
+
+/** Кружок с фото или с первой буквой имени, если фото нет. */
+export function avatarHtml(profile, name) {
+  const letter = (profile?.name || name || 'И').trim()[0].toUpperCase();
+  return profile?.photo
+    ? `<img class="ava" src="${profile.photo}" alt="">`
+    : `<span class="ava ava--letter">${letter}</span>`;
+}
+
 /** Название и описание на языке посетителя, с откатом на русский. */
 export function loc(game) {
   if (lang === 'en') {

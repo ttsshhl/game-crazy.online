@@ -1,7 +1,7 @@
 {
-  "name": "PLAYDROP",
-  "short_name": "PLAYDROP",
-  "description": "Браузерные игры без установки",
+  "name": "CRAZY (vibecod) GAME",
+  "short_name": "CRAZY GAME",
+  "description": "Только больная фантазия соло-разработчиков",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#24262B",
