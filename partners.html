@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Партнёрам — CRAZY (vibecod) GAME</title>
+<meta name="description" content="Разместите свою браузерную игру: сохранения, рекорды и аудитория без комиссий и модерации по три недели.">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#24262B">
+<link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top__in">
+    <a class="logo" href="./index.html">CRAZY<em>(vibecod)</em>GAME</a>
+    <nav class="nav">
+      <a href="./partners.html" class="is-on">Партнёрам</a>
+      <a href="./index.html#fresh">Новинки</a>
+      <a href="./index.html#popular">Популярное</a>
+      <a href="./index.html#about">О проекте</a>
+    </nav>
+    <div id="account"></div>
+  </div>
+</header>
+
+<main class="shell">
+
+  <section class="pitch">
+    <span class="badge">Открытый набор</span>
+    <h1>Сделали игру — <b>покажите её</b></h1>
+    <p class="pitch__lead">
+      Площадка собрана соло-разработчиком для таких же соло-разработчиков. Никакой очереди на модерацию в три недели,
+      никаких требований к студии и юрлицу. Есть работающая игра в браузере — значит, ей здесь место.
+    </p>
+    <a class="btn btn--play" href="#form">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5-9-5.5Z"/></svg>Предложить игру</a>
+  </section>
+
+  <div class="row"><h2>Что вы получаете</h2></div>
+  <div class="perks">
+    <div class="perk">
+      <h3>Готовый бэкенд</h3>
+      <p>Облачные сохранения, таблицы рекордов, статистика игрока и серии дней — всё уже работает. Подключается одной строкой в коде игры.</p>
+    </div>
+    <div class="perk">
+      <h3>Никакого переписывания</h3>
+      <p>Наш SDK повторяет интерфейс Yandex Games. Если игра выходила там, замените адрес скрипта — остальной код останется прежним.</p>
+    </div>
+    <div class="perk">
+      <h3>Витрина и удержание</h3>
+      <p>Игра попадает в каталог, в «Популярное» и в полку «Продолжить» у тех, кто её запускал. Возвращаться игроку напоминает сама площадка.</p>
+    </div>
+    <div class="perk">
+      <h3>Аудитория без комиссии</h3>
+      <p>Мы не берём долю и не требуем эксклюзива: выкладывайте игру где угодно ещё. Условия по рекламной выручке обсуждаются лично.</p>
+    </div>
+  </div>
+
+  <div class="row"><h2>Как это происходит</h2></div>
+  <ol class="steps">
+    <li><b>Пишете нам</b><span>Ссылка на игру и пара слов о ней. Отвечаем обычно в тот же день.</span></li>
+    <li><b>Смотрим и запускаем</b><span>Проверяем, что игра работает в рамке плеера, и заводим карточку в каталоге.</span></li>
+    <li><b>Подключаем SDK</b><span>По желанию: сохранения, рекорды, реклама за награду. Помогаем с интеграцией.</span></li>
+    <li><b>Игра в каталоге</b><span>Появляется в разделе «Новинки», а дальше поднимается по числу запусков.</span></li>
+  </ol>
+
+  <div class="row"><h2>Что нужно от игры</h2></div>
+  <div class="reqs">
+    <p><b>Запускается в браузере.</b> HTML5, WebGL, Canvas — что угодно, лишь бы открывалось по ссылке без установки.</p>
+    <p><b>Работает внутри рамки.</b> Игра открывается в плеере площадки, поэтому не должна требовать собственного окна.</p>
+    <p><b>Относительные пути.</b> Ссылки на скрипты и ресурсы вида <code>build/game.js</code>, а не <code>/build/game.js</code>.</p>
+    <p><b>Управление с телефона.</b> Не обязательно, но игры с тач-управлением собирают заметно больше запусков.</p>
+    <p><b>Ваши права на контент.</b> Чужие ассеты, музыку и персонажей без разрешения размещать нельзя.</p>
+  </div>
+
+  <section class="cta" id="form">
+    <h2>Предложить игру</h2>
+    <p>Напишите: ссылка на игру, короткое описание и как с вами связаться.</p>
+    <div class="cta__row">
+      <!-- ЗАМЕНИТЕ на свои контакты -->
+      <a class="btn btn--play" href="mailto:adnvlasov@mail.ru?subject=Игра%20для%20CRAZY%20(vibecod)%20GAME">Написать на почту</a>
+      <a class="btn btn--ghost" href="https://t.me/polevoynow" target="_blank" rel="noopener">Телеграм</a>
+    </div>
+    <p class="cta__note">Уже разместили игру и хотите обновить сборку — напишите тем же способом, обновим в течение дня.</p>
+  </section>
+</main>
+
+<script type="module">
+import { ensureSession, isNamed, canSignIn, signIn, signOut } from './assets/db.js';
+import { loadMyProfile, avatarHtml, t } from './assets/catalog.js';
+
+const session = await ensureSession();
+const named = isNamed(session);
+const profile = await loadMyProfile(session);
+const box = document.getElementById('account');
+
+if (named) {
+  box.innerHTML = `<a class="acc" href="./profile.html">${avatarHtml(profile, 'Профиль')}
+      <span>${profile.name || 'Профиль'}</span></a>
+    <button class="btn btn--ghost" id="out">${t.signOut}</button>`;
+  document.getElementById('out').onclick = async () => { await signOut(); location.reload(); };
+} else {
+  box.innerHTML = `<a class="acc" href="./profile.html">${avatarHtml(profile, 'Гость')}<span>${t.profile}</span></a>`
+    + (canSignIn ? `<button class="btn" id="in">${t.signIn}</button>` : '');
+  if (canSignIn) document.getElementById('in').onclick = () => signIn(location.href);
+}
+</script>
+</body>
+</html>

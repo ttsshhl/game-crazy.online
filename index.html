@@ -17,7 +17,19 @@
 <header class="top">
   <div class="top__in">
     <a class="logo" href="./index.html">CRAZY<em>(vibecod)</em>GAME</a>
-    <input class="search" id="search" type="search" placeholder="Найти игру" aria-label="Поиск игры">
+
+    <nav class="nav">
+      <a href="./partners.html">Партнёрам</a>
+      <a href="#fresh">Новинки</a>
+      <a href="#popular">Популярное</a>
+      <a href="#about">О проекте</a>
+    </nav>
+
+    <label class="search-wrap">
+      <input class="search" id="search" type="search" placeholder="Поиск игр…" aria-label="Поиск игры">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg>
+    </label>
+
     <div id="account"></div>
   </div>
 </header>
@@ -25,115 +37,205 @@
 <main class="shell">
   <p class="tagline">Только больная фантазия соло-разработчиков. Такого больше нет нигде.</p>
 
-  <section class="continue is-hidden" id="continue">
-    <div class="row">
-      <h2 id="continueTitle">Продолжить</h2>
-      <span id="continueMeta"></span>
-    </div>
-    <div class="shelf" id="continueShelf"></div>
-    <p class="nudge is-hidden" id="guestNudge">
-      Прогресс привязан к этому браузеру.
-      <button class="link" id="nudgeLogin">Войдите</button>, чтобы играть с телефона и компьютера.
-    </p>
+  <!-- крупная карточка с переключением -->
+  <section class="hero" id="hero" aria-label="Избранная игра"></section>
+
+  <div class="split">
+    <section class="continue is-hidden" id="continue">
+      <div class="row">
+        <h2>Продолжить игру</h2>
+        <span id="continueMeta"></span>
+      </div>
+      <div class="shelf" id="continueShelf"></div>
+      <p class="nudge is-hidden" id="guestNudge">
+        Прогресс привязан к этому браузеру.
+        <button class="link" id="nudgeLogin">Войдите</button>, чтобы играть с телефона и компьютера.
+      </p>
+    </section>
+
+    <aside class="facts" id="facts"></aside>
+  </div>
+
+  <section id="popular">
+    <div class="row"><h2>🔥 Популярное сейчас</h2><span id="popularMeta"></span></div>
+    <div class="feature-grid" id="popularGrid"></div>
   </section>
 
-  <section class="hero" id="hero"></section>
+  <section id="fresh">
+    <div class="row"><h2>Все игры</h2><span id="count"></span></div>
+    <div class="grid" id="grid"></div>
+  </section>
 
-  <div class="row"><h2 id="allTitle">Все игры</h2><span id="count"></span></div>
-  <div class="grid" id="grid"></div>
+  <section class="about" id="about">
+    <h2>О проекте</h2>
+    <p>Здесь живут игры, собранные соло-разработчиками — часто за пару недель, часто из совершенно безумной идеи. Ничего скачивать не нужно: всё запускается прямо в браузере, прогресс сохраняется, рекорды считаются.</p>
+    <p>Если вы делаете игры и хотите, чтобы в них играли — <a href="./partners.html">заходите в раздел для партнёров</a>.</p>
+  </section>
 </main>
 
 <script type="module">
 import { ensureSession, isNamed, canSignIn, signIn, signOut } from './assets/db.js';
 import { loadLibrary, loadStreak, fmtDuration, fmtAgo, plural } from './assets/library.js';
-import { loadGames, loc, t, loadMyProfile, avatarHtml } from './assets/catalog.js';
+import { loadGames, loadPopularity, loadMyProfile, avatarHtml, loc, t } from './assets/catalog.js';
 
+const $ = id => document.getElementById(id);
 const games = await loadGames();
 const byId = Object.fromEntries(games.map(g => [g.id, g]));
 const session = await ensureSession();
 const named = isNamed(session);
-
-// ─── аккаунт ─────────────────────────────────────────────────
-document.getElementById('continueTitle').textContent = t.continue;
-document.getElementById('allTitle').textContent = t.all;
-document.getElementById('search').placeholder = t.search;
-
-const box = document.getElementById('account');
 const myProfile = await loadMyProfile(session);
 
+// ─── шапка ───────────────────────────────────────────────────
+const box = $('account');
 if (named) {
-  box.innerHTML = `<a class="acc" href="./profile.html">
-      ${avatarHtml(myProfile, 'Профиль')}
+  box.innerHTML = `<a class="acc" href="./profile.html">${avatarHtml(myProfile, 'Профиль')}
       <span>${myProfile.name || 'Профиль'}</span></a>
     <button class="btn btn--ghost" id="out">${t.signOut}</button>`;
-  document.getElementById('out').onclick = async () => { await signOut(); location.reload(); };
+  $('out').onclick = async () => { await signOut(); location.reload(); };
 } else {
-  box.innerHTML = `<a class="acc" href="./profile.html">${avatarHtml(myProfile, 'Гость')}<span>${t.profile}</span></a>` +
-    (canSignIn ? `<button class="btn" id="in">${t.signIn}</button>` : '');
-  if (canSignIn) document.getElementById('in').onclick = () => signIn(location.href);
+  box.innerHTML = `<a class="acc" href="./profile.html">${avatarHtml(myProfile, 'Гость')}<span>${t.profile}</span></a>`
+    + (canSignIn ? `<button class="btn" id="in">${t.signIn}</button>` : '');
+  if (canSignIn) $('in').onclick = () => signIn(location.href);
 }
 
-// ─── полка «Продолжить» ──────────────────────────────────────
+// ─── прогресс игрока ─────────────────────────────────────────
 const library = (await loadLibrary(session, games))
   .filter(e => byId[e.game_id] && e.last_played)
-  .sort((a, b) => new Date(b.last_played) - new Date(a.last_played))
-  .slice(0, 6);
+  .sort((a, b) => new Date(b.last_played) - new Date(a.last_played));
 
+const played = new Set(library.map(e => e.game_id));
+const popularity = await loadPopularity();
+
+// ─── крупная карточка ────────────────────────────────────────
+const spotlight = [
+  ...games.filter(g => g.featured),
+  ...games.filter(g => !g.featured && !played.has(g.id))
+].slice(0, 4);
+if (!spotlight.length) spotlight.push(games[0]);
+
+let slide = 0;
+function renderHero() {
+  const g = spotlight[slide];
+  if (!g) return;
+  const badge = g.tag || (played.has(g.id) ? '' : 'Новинка');
+  const words = loc(g).title.split(' ');
+  const head = words.length > 1
+    ? `${words[0]}<br><b>${words.slice(1).join(' ')}</b>`
+    : `<b>${loc(g).title}</b>`;
+
+  $('hero').innerHTML = `
+    <img class="hero__bg" src="${g.cover}" alt="" onerror="this.style.display='none'">
+    <div class="hero__grad"></div>
+    <div class="hero__body">
+      ${badge ? `<span class="badge">${badge}</span>` : ''}
+      <h1>${head}</h1>
+      <p>${loc(g).description || ''}</p>
+      <div class="hero__cta">
+        <a class="btn btn--play" href="./game.html?id=${g.id}">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5-9-5.5Z"/></svg>Играть</a>
+        <span class="hero__note">Браузерная игра</span>
+      </div>
+    </div>
+    ${spotlight.length > 1 ? `<div class="dots">${spotlight.map((_, i) =>
+      `<button class="${i === slide ? 'is-on' : ''}" data-slide="${i}" aria-label="Игра ${i + 1}"></button>`).join('')}</div>` : ''}`;
+
+  $('hero').querySelectorAll('[data-slide]').forEach(b => {
+    b.onclick = () => { slide = +b.dataset.slide; renderHero(); restartRotation(); };
+  });
+}
+
+let timer = null;
+function restartRotation() {
+  clearInterval(timer);
+  if (spotlight.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  timer = setInterval(() => { slide = (slide + 1) % spotlight.length; renderHero(); }, 9000);
+}
+renderHero();
+restartRotation();
+$('hero').addEventListener('mouseenter', () => clearInterval(timer));
+$('hero').addEventListener('mouseleave', restartRotation);
+
+// ─── продолжить ──────────────────────────────────────────────
 if (library.length) {
   const streak = await loadStreak(session);
-  document.getElementById('continue').classList.remove('is-hidden');
-  document.getElementById('continueMeta').textContent = streak.current > 1
-    ? `${streak.current} ${plural(streak.current, 'день', 'дня', 'дней')} подряд`
-    : '';
+  $('continue').classList.remove('is-hidden');
+  $('continueMeta').textContent = streak.current > 1
+    ? `${streak.current} ${plural(streak.current, 'день', 'дня', 'дней')} подряд` : '';
 
-  document.getElementById('continueShelf').innerHTML = library.map(e => {
+  const maxSeconds = Math.max(...library.map(e => e.seconds || 0), 1);
+
+  $('continueShelf').innerHTML = library.slice(0, 4).map(e => {
     const g = byId[e.game_id];
-    const place = e.rank ? `${e.rank}-е место из ${e.total_players}` : '';
-    const time = e.seconds ? fmtDuration(e.seconds) : '';
-    return `<a class="slot" href="./game.html?id=${g.id}">
-      <img class="slot__img" src="${g.cover}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+    const share = Math.max(6, Math.round(((e.seconds || 0) / maxSeconds) * 100));
+    const meta = [fmtAgo(e.last_played), e.seconds ? fmtDuration(e.seconds) : ''].filter(Boolean).join(' · ');
+    return `<div class="slot">
+      <div class="slot__art">
+        <img src="${g.cover}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        <span class="slot__bar"><i style="width:${share}%"></i></span>
+      </div>
       <div class="slot__b">
         <h3>${loc(g).title}</h3>
-        <p>${[fmtAgo(e.last_played), time].filter(Boolean).join(' · ')}</p>
-        ${place ? `<p class="slot__rank">${place}</p>` : ''}
+        <p>${meta}</p>
+        ${e.rank ? `<p class="slot__rank">${e.rank}-е место из ${e.total_players}</p>` : ''}
+        <a class="btn btn--soft" href="./game.html?id=${g.id}">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5-9-5.5Z"/></svg>Продолжить</a>
       </div>
-      <span class="slot__go">Продолжить</span>
-    </a>`;
+    </div>`;
   }).join('');
 
   if (!named && canSignIn) {
-    const nudge = document.getElementById('guestNudge');
-    nudge.classList.remove('is-hidden');
-    document.getElementById('nudgeLogin').onclick = () => signIn(location.href);
+    $('guestNudge').classList.remove('is-hidden');
+    $('nudgeLogin').onclick = () => signIn(location.href);
   }
 }
 
-// ─── витрина ─────────────────────────────────────────────────
-const played = new Set(library.map(e => e.game_id));
-const featured = games.find(g => g.featured && !played.has(g.id))
-  || games.find(g => !played.has(g.id)) || games[0];
-
-document.getElementById('hero').innerHTML = `
-  <a class="hero__main" href="./game.html?id=${featured.id}">
-    <img src="${featured.cover}" alt="" onerror="this.style.display='none'">
-    <div class="hero__grad"></div>
-    <div class="hero__body">
-      <div class="eyebrow">${played.size ? t.notPlayed : t.playingNow}</div>
-      <h1>${loc(featured).title}</h1>
-      <p>${loc(featured).description}</p>
-      <span class="btn">${t.play}</span>
-    </div>
-  </a>
-  <div class="hero__side">
-    <div class="stat"><b>${games.length}</b><span>${t.games}</span></div>
-    <div class="stat"><b>0 ₽</b><span>${t.free}</span></div>
+// ─── факты справа ────────────────────────────────────────────
+$('facts').innerHTML = `
+  <div class="fact">
+    <span class="fact__ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3M15 11h.01M17.5 13.5h.01"/></svg>
+    </span>
+    <div><b>${games.length}</b>
+      <span>${plural(games.length, 'игра в каталоге', 'игры в каталоге', 'игр в каталоге')}</span></div>
+  </div>
+  <div class="fact">
+    <span class="fact__ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 3c1.5 4 4.5 5.5 4.5 9a4.5 4.5 0 0 1-9 0C7.5 8.5 10.5 7 12 3Z"/></svg>
+    </span>
+    <div><b>Без установки</b>
+      <span>Новые сумасшедшие игры, которых больше нет нигде</span></div>
   </div>`;
 
+// ─── популярное ──────────────────────────────────────────────
+const ranked = games
+  .map(g => ({ g, stat: popularity[g.id] || { launches: 0, players: 0 } }))
+  .sort((a, b) => b.stat.launches - a.stat.launches)
+  .slice(0, 3);
+
+if (ranked.some(r => r.stat.launches > 0)) {
+  $('popularGrid').innerHTML = ranked.map(({ g, stat }) => `
+    <a class="feature" href="./game.html?id=${g.id}">
+      <img class="feature__img" src="${g.cover}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      ${g.tag ? `<span class="tag">${g.tag}</span>` : ''}
+      <div class="feature__b">
+        <div>
+          <h3>${loc(g).title}</h3>
+          <p>${stat.launches} ${plural(stat.launches, 'запуск', 'запуска', 'запусков')}${
+            stat.players > 1 ? ` · ${stat.players} ${plural(stat.players, 'игрок', 'игрока', 'игроков')}` : ''}</p>
+        </div>
+        <span class="feature__play" aria-hidden="true">
+          <svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5-9-5.5Z"/></svg>
+        </span>
+      </div>
+    </a>`).join('');
+} else {
+  document.getElementById('popular').classList.add('is-hidden');
+}
+
 // ─── каталог ─────────────────────────────────────────────────
-const grid = document.getElementById('grid');
 function render(list) {
-  document.getElementById('count').textContent = `${list.length} шт.`;
-  grid.innerHTML = list.map(g => `
+  $('count').textContent = `${list.length} ${plural(list.length, 'игра', 'игры', 'игр')}`;
+  $('grid').innerHTML = list.map(g => `
     <a class="card" href="./game.html?id=${g.id}">
       ${g.tag ? `<span class="tag">${g.tag}</span>` : ''}
       <img class="card__img" src="${g.cover}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -142,7 +244,7 @@ function render(list) {
 }
 render(games);
 
-document.getElementById('search').addEventListener('input', e => {
+$('search').addEventListener('input', e => {
   const q = e.target.value.trim().toLowerCase();
   render(games.filter(g => (g.title + (g.title_en || '') + (g.genre || '')).toLowerCase().includes(q)));
 });

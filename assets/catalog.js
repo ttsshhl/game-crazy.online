@@ -46,6 +46,15 @@ export async function loadGames(force) {
   }
 }
 
+/** Сколько раз каждую игру запускали — для раздела «Популярное». */
+export async function loadPopularity() {
+  try {
+    const { data, error } = await db.rpc('games_popularity');
+    if (error || !data) return {};
+    return Object.fromEntries(data.map(r => [r.game_id, r]));
+  } catch (_) { return {}; }
+}
+
 /** Имя и фото игрока из таблицы profiles — то же, что видно в таблицах рекордов. */
 export async function loadMyProfile(session) {
   const meta = session?.user?.user_metadata || {};
