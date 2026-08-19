@@ -35,8 +35,6 @@
 </header>
 
 <main class="shell">
-  <p class="tagline">Только больная фантазия соло-разработчиков. Такого больше нет нигде.</p>
-
   <!-- крупная карточка с переключением -->
   <section class="hero" id="hero" aria-label="Избранная игра"></section>
 
@@ -66,17 +64,15 @@
     <div class="grid" id="grid"></div>
   </section>
 
-  <section class="about" id="about">
-    <h2>О проекте</h2>
-    <p>Здесь живут игры, собранные соло-разработчиками — часто за пару недель, часто из совершенно безумной идеи. Ничего скачивать не нужно: всё запускается прямо в браузере, прогресс сохраняется, рекорды считаются.</p>
-    <p>Если вы делаете игры и хотите, чтобы в них играли — <a href="./partners.html">заходите в раздел для партнёров</a>.</p>
-  </section>
 </main>
 
 <script type="module">
 import { ensureSession, isNamed, canSignIn, signIn, signOut } from './assets/db.js';
 import { loadLibrary, loadStreak, fmtDuration, fmtAgo, plural } from './assets/library.js';
 import { loadGames, loadPopularity, loadMyProfile, avatarHtml, loc, t } from './assets/catalog.js';
+import { mountAbout } from './assets/about.js';
+
+mountAbout();
 
 const $ = id => document.getElementById(id);
 const games = await loadGames();

@@ -74,6 +74,8 @@
     <p><b>Работает внутри рамки.</b> Игра открывается в плеере площадки, поэтому не должна требовать собственного окна.</p>
     <p><b>Относительные пути.</b> Ссылки на скрипты и ресурсы вида <code>build/game.js</code>, а не <code>/build/game.js</code>.</p>
     <p><b>Управление с телефона.</b> Не обязательно, но игры с тач-управлением собирают заметно больше запусков.</p>
+    <p><b>Обложка в высоком разрешении.</b> 16:9, минимум 1280×720, лучше 1920×1080. Эта картинка растягивается
+      на весь баннер главной — мелкая превратится в мыло и до игры никто не дойдёт.</p>
     <p><b>Ваши права на контент.</b> Чужие ассеты, музыку и персонажей без разрешения размещать нельзя.</p>
   </div>
 
@@ -92,6 +94,9 @@
 <script type="module">
 import { ensureSession, isNamed, canSignIn, signIn, signOut } from './assets/db.js';
 import { loadMyProfile, avatarHtml, t } from './assets/catalog.js';
+import { mountAbout } from './assets/about.js';
+
+mountAbout();
 
 const session = await ensureSession();
 const named = isNamed(session);

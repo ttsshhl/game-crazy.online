@@ -46,9 +46,11 @@
         </div>
 
         <div class="field">
-          <label for="fCover">Иконка (jpg / png / webp)</label>
+          <label for="fCover">Обложка (jpg / png / webp)</label>
           <input id="fCover" type="file" accept="image/*">
-          <small>Пропорции 4:3, примерно 640×480</small>
+          <small>Соотношение 16:9, не меньше 1280×720. Лучше 1920×1080 — эта же картинка
+            растягивается на весь баннер главной, и мелкая будет выглядеть мыльной.</small>
+          <div class="cover-check" id="coverCheck"></div>
         </div>
 
         <div class="field">
@@ -158,6 +160,36 @@ $('fId').addEventListener('input', e => { e.target.dataset.touched = '1'; });
 $('fHtml').addEventListener('change', e => {
   const f = e.target.files[0];
   $('htmlInfo').textContent = f ? `${f.name} · ${(f.size / 1048576).toFixed(1)} МБ` : '';
+});
+
+// ─── проверка обложки: разрешение и пропорции ────────────────
+$('fCover').addEventListener('change', e => {
+  const file = e.target.files[0];
+  const out = $('coverCheck');
+  out.className = 'cover-check';
+  out.textContent = '';
+  if (!file) return;
+
+  const img = new Image();
+  img.onload = () => {
+    const { width: w, height: h } = img;
+    const ratio = w / h;
+    const notes = [];
+
+    if (w < 1280) notes.push(`ширина ${w}px — мало, на баннере будет мыло`);
+    if (Math.abs(ratio - 16 / 9) > 0.12) notes.push(`пропорции ${ratio.toFixed(2)}:1 вместо 16:9 — картинку обрежет`);
+
+    if (notes.length) {
+      out.className = 'cover-check is-bad';
+      out.textContent = `${w}×${h}: ` + notes.join('; ');
+    } else {
+      out.className = 'cover-check is-good';
+      out.textContent = `${w}×${h} — то что нужно`;
+    }
+    URL.revokeObjectURL(img.src);
+  };
+  img.onerror = () => { out.textContent = 'Не удалось прочитать картинку'; };
+  img.src = URL.createObjectURL(file);
 });
 
 // ─── перевод ─────────────────────────────────────────────────

@@ -6,6 +6,9 @@ import { CONFIG } from './config.js';
 import { db, ensureSession, isNamed, canSignIn, signIn, signOut } from './db.js';
 import { ads } from './ads.js';
 import { loadGames, loc, loadMyProfile, avatarHtml } from './catalog.js';
+import { mountAbout } from './about.js';
+
+mountAbout();
 
 const frame = document.getElementById('gameFrame');
 const params = new URLSearchParams(location.search);

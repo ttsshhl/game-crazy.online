@@ -103,5 +103,5 @@ at === -1 ? list.push(entry) : (list[at] = { ...list[at], ...entry });
 fs.writeFileSync(listPath, JSON.stringify(list, null, 2) + '\n');
 
 console.log(`\nГотово: ${title} → games/${id}/`);
-console.log(`Осталось положить обложку: assets/covers/${id}.jpg (640×480)`);
+console.log(`Осталось положить обложку: assets/covers/${id}.jpg — 16:9, минимум 1280×720`);
 console.log(`Проверить: http://localhost:3000/game.html?id=${id}`);

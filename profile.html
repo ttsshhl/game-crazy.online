@@ -44,6 +44,9 @@ import { db, ensureSession, isNamed, canSignIn, signIn, signOut } from './assets
 import { loadLibrary, loadStreak, xpFrom, levelFrom, fmtDuration, fmtAgo, plural } from './assets/library.js';
 import { loadGames, loc, avatarHtml } from './assets/catalog.js';
 import { lastError } from './assets/library.js';
+import { mountAbout } from './assets/about.js';
+
+mountAbout();
 
 const games = await loadGames();
 const byId = Object.fromEntries(games.map(g => [g.id, g]));
